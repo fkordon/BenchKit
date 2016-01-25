@@ -831,8 +831,8 @@ You may get them thanks to the following command:
 
 The benchmark lasted $day d, $hours h, $min mn, $sec s (a total of $DURATION seconds)." > /tmp/x_${bksc_file}.txt
    cat /tmp/x_${bksc_file}.txt | mailx -s "BenchKit: results of $(echo $bksc_file | cut -d '.' -f 1) on $(uname -n)" $bksc_mail
-	# Special sending of a SMS (for fko only)
-	wget --no-check-certificate -O /dev/null "https://smsapi.free-mobile.fr/sendmsg?user=19296963&pass=0EkrVzu8eHIQ60&msg=$(echo "$MSG" | sed -e 's/ /%20/g')" 
+	# Special sending of a SMS (for fko only - works with FREE-Mobile in France)
+	#wget --no-check-certificate -O /dev/null "https://smsapi.free-mobile.fr/sendmsg?user=XXXXX&msg=$(echo "$MSG" | sed -e 's/ /%20/g')" 
 }
 
 #	}}}
