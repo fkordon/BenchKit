@@ -1,0 +1,99 @@
+
+#RUNNAME			=	qualtapaal-blw3
+#RUNNAME			=	quallola-blw7
+#RUNNAME			=	qualltsmin-csrt
+#RUNNAME			=	qualspot-csrt
+#RUNNAME			=	qualmarcie-blw7
+#RUNNAME			=	qualsmart-blw7
+#RUNNAME			=	qualgspn-blw3
+#RUNNAME			=	qualtina-csrt
+#RUNNAME			=	qualitstool-csrt
+
+RUNNAME			=	r210-smll
+
+EMAIL			=	Fabrice.Kordon@lip6.fr
+MODELFILE		=	models_selected
+IMAGE_DIR		=	/Volumes/Extra-128/MCC2017-VM
+
+# Donnees sur quadhexa-2.u-paris10.fr (7 vm single ou 5 vm quad)
+# EXECMACHINE		=	quadhexa-2.u-paris10.fr
+# NBVNODES		=	5
+# EXECLOGIN		=	fko
+# EXECVMDIR		=	/data/fko
+
+# Donnees sur bluewhale03 (31 vm single ou 9 vm quad)
+# EXECMACHINE		=	bb3
+# NBVNODES		=	9
+# EXECLOGIN		=	hulinhub
+# EXECVMDIR		=	/scratch/hulinhub
+
+# Donnees sur bluewhale07 (31 vm single ou 7 vm quad)
+# EXECMACHINE		=	bb7
+# NBVNODES		=	7
+# EXECLOGIN		=	hulinhub
+# EXECVMDIR		=	/scratch/hulinhub
+
+# Données sur smallx.common.lip6.fr (3 vm single ou quad)
+EXECMACHINE		=	smallxx.common.lip6.fr
+NBVNODES		=	3
+EXECLOGIN		=	root
+EXECVMDIR		=	/data/fkordon
+
+# Donnees sur ebro (63 vm single ou 15 vm quad)
+# EXECMACHINE		=	ebro
+# NBVNODES		=	15
+# EXECLOGIN		=	fkordon
+# EXECVMDIR		=	/mnt/tpsp/fkordon
+
+# Donnees sur caserta (63 vm single ou 23 vm quad)
+# EXECMACHINE		=	caserta
+# NBVNODES		=	23
+# EXECLOGIN		=	x1003455
+# EXECVMDIR		=	/local/x1003455
+
+#time in secondes
+CONF_TIME		=	3600
+# memory in KB
+CONF_MEM		=	16384
+# cores per VM
+CONF_CORES		=	4
+
+# ### !!! Qualification
+# CONF_TIME		=	60
+# CONF_CORES		=	1
+# EXECMACHINE		=	ebro
+# NBVNODES		=	40
+# EXECLOGIN		=	fkordon
+# EXECVMDIR		=	/mnt/tpsp/fkordon
+
+nothing:
+	@echo "options are :"
+	@echo "   - create_bench (create a new bench with selected data),"
+	@echo "   - deploy_bk (deploy BenchKit on a machine for a dedicated BenchMark),"
+	@echo "   - execute_bench (execute the Benchmark),"
+	@echo "   - deploy_vm (deploy the VM and possibly convert them in qcow2 format)".
+	@echo
+	@echo "   - depl_bk (deploy BenchKit on a machine for a dedicated BenchMark with BKJOB parameterized),"
+	@echo "   - depl_vm (deploy the VM and possibly convert them in qcow2 format with BKJOB parameterized)".
+	@echo "   - exec_bench (execute the Benchmark with BKJOB parameterized),"
+
+create_bench:
+	./bklb -generate $(RUNNAME) $(EXECMACHINE) $(NBVNODES) $(EXECLOGIN) $(CONF_TIME) $(CONF_MEM) $(CONF_CORES) mcc mcc-conf/tools_all.txt mcc-conf/$(MODELFILE).txt mcc-conf/examinations_all.txt $(EXECVMDIR)
+
+deploy_bk:
+	./bklb -deploy -benchkit $(RUNNAME).bkjobs
+
+depl_bk:
+	./bklb -deploy -benchkit $(BKJOB)
+
+execute_bench:
+	./bklb -execute $(RUNNAME).bkjobs $(EMAIL)
+
+exec_bench:
+	./bklb -execute $(BKJOB) $(EMAIL)
+
+deploy_vm:
+	./bklb -deploy -disk_images $(RUNNAME).bkjobs $(IMAGE_DIR)
+
+depl_vm:
+	./bklb -deploy -disk_images $(BKJOB) $(IMAGE_DIR)

@@ -3,6 +3,21 @@ LONG_CMD=halt_a_vm launch_a_command launch_a_run launch_a_vm launch_benchmark ex
 LIB_SCRIPT=lib/benchkit.lib.sh
 TARGET="$(HOME)"
 
+doc:
+	@echo "================================================================================"
+	@echo " BenchKit version 2 (2016)"
+	@echo " F. Kordon and F. Hulin-Hubard"
+	@echo "================================================================================"
+	@echo
+	@echo "Possibles options are:"
+	@echo
+	@echo " - install     : generate links for an easy access to all BenchKit commands"
+	@echo " - long        : same as install but with long command names"
+	@echo " - uninstall   : uninstall BenchKit (delete links)"
+	@echo " - clean       : same as uninstall"
+	@echo " - distrib     : build a distribution"
+	@echo " - selfdistrib : same as distrib but in a location defined with variable where"
+
 install:
 	for link in $(SHORT_CMD) ; do \
 		ln -s $(LIB_SCRIPT) $$link ; \

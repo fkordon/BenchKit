@@ -1,0 +1,19 @@
+###################
+# all tools (id:the disk image)
+#
+# sequentiels
+#marcie:marcie2017.qcow2
+#gspn:gspn2017.qcow2
+#smart:smart2017.qcow2
+#tedd:tina2017.qcow2
+#sift:tina2017.qcow2
+#spot:spot2017.qcow2
+#
+# paralleles
+#ltsmin:ltsmin2017.qcow2
+#lola:lola2017.qcow2
+#tapaal:tapaal2017.qcow2
+#itstools:itstools2017.qcow2
+#
+#
+#MYTOOL:mytool.qcow2

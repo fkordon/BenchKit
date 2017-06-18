@@ -1,31 +1,5 @@
 #!/bin/bash
 
-################################################################################
-#
-#    Contact            : Fabrice Kordon (Fabrice.Kordon@lip6.fr)
-#                         Francis Hulin-Hubard (fhh@lsv.ens-cachan.fr)
-#    Web                : https://github.com/fkordon/BenchKit
-#    Sources            : https://github.com/fkordon/BenchKit
-#    Description        : "BenchKit" is a system to massively invoke
-#    programs to be benchmarked and evaluated. It handles their execution
-#    in virtual machines and smaple times, CPU and I/O consuption.
-#    Licence            : GPL3
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>
-#
-################################################################################
-
 # {{{ Initializing parameters 
 ################################################################################
 # Initializing parameters
@@ -37,8 +11,8 @@ INVOCATION_TEMPLATE_FILE="conf/invocation_template.txt" ;
 
 _run="$(basename ${0})" ;
 _benchkit_version="2" ;
-_benchkit_svn_date='$Date:: 2015-05-21 18:48:34 +0200 (Jeu, 21 mai 2015) $' ;
-_benchkit_svn_rev='$Rev:: 2270                                          $' ;
+_benchkit_svn_date='$Date:: 2017-06-06 22:37:20 +0200 (Mar, 06 jui 2017) $' ;
+_benchkit_svn_rev='$Rev:: 3408                                          $' ;
 _benchkit_svn_aut='$Author:: fko                                        $' ;
 
 # default values for execution parameters
@@ -53,6 +27,10 @@ BK_DEFAULT_VALUE_VM_LOGIN="mcc"
 BK_DEFAULT_RESULT_BASEDIR_NAME="BK_RESULTS"
 BENCHKIT_VERSION="$_benchkit_version-$(echo "$_benchkit_svn_rev" | cut -d ' ' -f 2)" ;
 BK_DEFAULT_VALUE_NBPROC="1"
+
+# CPU type
+# to exploit the host processor, just set this variable to "host" 
+BK_CPU_TYPE="SandyBridge" # this corresponds to the following flags ''
 
 # }}}
 
@@ -171,7 +149,8 @@ bklr () {
 	fi
 
 	if [ -z "${OUTPUT_DIR}" ] ; then
-		OUTPUT_DIR="$HOME/$BK_DEFAULT_RESULT_BASEDIR_NAME"
+		#OUTPUT_DIR="$HOME/$BK_DEFAULT_RESULT_BASEDIR_NAME"
+		OUTPUT_DIR="/tmp/$BK_DEFAULT_RESULT_BASEDIR_NAME"
 	fi
 
 	echo "bklr runs $BK_TOOL_NAME on $BK_INPUT_NAME ($BK_EXAMINATION)" ;
@@ -392,9 +371,9 @@ _eof_
 }
 
 bklv_launch () {
-	KVM=$(which qemu-kvm)
+	KVM=$(which qemu-system-x86_64)
 	if [ -z "$KVM" ] ; then
-		KVM=$(which qemu-system-x86_64)
+		KVM=$(which qemu-kvm)
 	fi
 	if [ -z "$KVM" ] ; then
 		die "CANNOT EXECUTE, qemu-kvm is not installed"
@@ -414,7 +393,7 @@ bklv_launch () {
 	$KVM -vnc :$BK_VNC \
 		-enable-kvm\
 		-smp $BK_NBPROC\
-		-cpu host \
+		-cpu $BK_CPU_TYPE \
 		-daemonize \
 		-k $KEYBOARD \
 		-m $BK_MAXMEM \
@@ -538,7 +517,7 @@ bklb () {
 			echo "Deploying BenchKit on $bklb_login@$bklb_host for benchmark $bklb_benchid"
 			make selfdistrib where=/tmp
 			scp /tmp/BenchKit2.tgz $bklb_login@$bklb_host:
-			ssh $bklb_login@$bklb_host 'if [ -d BenchKit2 ] ; then rm -rf BenchKit2 ; fi ; tar xzf BenchKit2.tgz ; rm -f BenchKit2.tgz ; cd BenchKit2 ; make'
+			ssh $bklb_login@$bklb_host 'if [ -d BenchKit2 ] ; then rm -rf BenchKit2 ; fi ; tar xzf BenchKit2.tgz ; rm -f BenchKit2.tgz ; cd BenchKit2 ; make install'
 			rm -fr /tmp/BenchKit2*
 		elif [ "$bklb_deploy" = "-disk_images" ] ; then
 			if [ -z "$bklb_dir" ] ; then
@@ -555,7 +534,7 @@ bklb () {
 			echo
 			echo "$disk_image_list"
 			echo
-			echo "Do you confirm ? (Ctrl-C o cancel)"
+			echo "Do you confirm ? (Ctrl-C to cancel)"
 			read AAA
 			(DEPLOYED=""
 			cd "$bklb_dir"
@@ -577,6 +556,7 @@ bklb () {
 						echo "   Copying $alternative_image at $bklb_login@$bklb_host:$bklb_location"
 						tar czvf - $alternative_image | ssh $bklb_login@$bklb_host 'tar xzvf -'
 						echo "   Converting $alternative_image into $imagefile"
+						#ssh $bklb_login@$bklb_host "mv $alternative_image $bklb_location ; cd $bklb_location ; qemu-img convert $alternative_image -c -O qcow2 $imagefile"
 						ssh $bklb_login@$bklb_host "mv $alternative_image $bklb_location ; cd $bklb_location ; qemu-img convert $alternative_image -O qcow2 $imagefile"
 						DEPLOYED="$DEPLOYED $alternative_image"
 					else
@@ -626,7 +606,7 @@ bklb () {
 		read AAA
 		echo "   Copying $bklb_file into the target machine"
 		scp $bklb_file $bklb_login@$bklb_host:BenchKit2
-		if [ "$(ssh $bklb_login@$bklb_host 'ls $BK_DEFAULT_RESULT_BASEDIR_NAME 2> /dev/null')" ] ; then
+		if [ "$(ssh $bklb_login@$bklb_host 'ls /tmp/$BK_DEFAULT_RESULT_BASEDIR_NAME 2> /dev/null')" ] ; then
 			echo
 			echo "WARNING, results from a previous execution remain, they will be destroyed"
 			echo "Do you confirm ? (ctrl-C to cancel):"
@@ -634,7 +614,7 @@ bklb () {
 		fi
 		echo "   Launching the Benchmark"
 		#ssh $bklb_login@$bklb_host "rm -rf $BK_DEFAULT_RESULT_BASEDIR_NAME 2> /dev/null ; cd BenchKit2 ; nohup ./bksc $bklb_file $bklb_email 2>&1 | mailx -s \"BenchKit, execution of $bklb_benchid\" $bklb_email &" &
-		ssh $bklb_login@$bklb_host "rm -rf $BK_DEFAULT_RESULT_BASEDIR_NAME 2> /dev/null ; cd BenchKit2 ; nohup ./bksc $(basename $bklb_file) $bklb_email > /dev/null 2> /dev/null &" &
+		ssh $bklb_login@$bklb_host "rm -rf /tmp/$BK_DEFAULT_RESULT_BASEDIR_NAME 2> /dev/null ; cd BenchKit2 ; nohup ./bksc $(basename $bklb_file) $bklb_email > /dev/null 2> /dev/null &" &
 		echo
 		echo "Results will be sent by email to $bklb_email"
 	elif [ "$bklb_cmd" = "-generate" ] ; then
@@ -811,8 +791,8 @@ bksc () {
 		# now the main loop is finished, we wait for all remaining child processes
 		wait
 	)
-	cd $HOME
-	tar czf /tmp/$bksc_benchid.tgz $BK_DEFAULT_RESULT_BASEDIR_NAME
+	cd /tmp # se positionner juste au dessus du répertoire des résultats
+	tar czf $bksc_benchid.tgz $BK_DEFAULT_RESULT_BASEDIR_NAME
 	END_TIME=$(date +%s)
 	DURATION=$(expr $END_TIME - $BEGIN_TIME)
 	day=$(perl -e 'printf "%0.2d", '$DURATION' / 86400')
@@ -831,8 +811,8 @@ You may get them thanks to the following command:
 
 The benchmark lasted $day d, $hours h, $min mn, $sec s (a total of $DURATION seconds)." > /tmp/x_${bksc_file}.txt
    cat /tmp/x_${bksc_file}.txt | mailx -s "BenchKit: results of $(echo $bksc_file | cut -d '.' -f 1) on $(uname -n)" $bksc_mail
-	# Special sending of a SMS (for fko only - works with FREE-Mobile in France)
-	#wget --no-check-certificate -O /dev/null "https://smsapi.free-mobile.fr/sendmsg?user=XXXXX&msg=$(echo "$MSG" | sed -e 's/ /%20/g')" 
+	# Special sending of a SMS (for fko only)
+	wget --no-check-certificate -O /dev/null "https://smsapi.free-mobile.fr/sendmsg?user=19296963&pass=0EkrVzu8eHIQ60&msg=$(echo "$MSG" | sed -e 's/ /%20/g')" 
 }
 
 #	}}}
@@ -913,14 +893,14 @@ bkmonitor () {
 	bk_jobfile="$1"
 	bk_delay="$2"
 	if [ -z "$bk_delay" ] ; then
-		bk_delay=22
+		bk_delay=15
 	fi
 	totaljobs=$(grep -v ^# $bk_jobfile | wc -l | tr -s ' ' | cut -d ' ' -f 2)
 	LINE=$(grep BK_CONFIGURATION $bk_jobfile)
 	bklc_login=$(echo "$LINE" | cut -d ':' -f 3)
 	bklc_host=$(echo "$LINE" | cut -d ':' -f 4)
 	while [ -z "$crtjobs" ] ; do
-		crtjobs=$(ssh $bklc_login@$bklc_host 'grep -v ^### BK_RESULTS/CSV/summary_* 2>/dev/null | wc -l | tr -s " " | cut -d " " -f 1') 
+		crtjobs=$(ssh $bklc_login@$bklc_host 'grep -v ^### /tmp/BK_RESULTS/CSV/summary_* 2>/dev/null | wc -l | tr -s " " | cut -d " " -f 1') 
 		if [ -z "$crtjobs" ] ; then
 			sleep $bk_delay
 		fi
@@ -934,7 +914,7 @@ bkmonitor () {
 			while [ "$crtjobs" -lt "$totaljobs" ]  ; do
 				percent=$(expr $crtjobs \* 100 / $totaljobs)
 				echo "$percent $crtjobs executions done out of $totaljobs ($percent%)"
-				crtjobs=$(ssh $bklc_login@$bklc_host 'grep -v ^### BK_RESULTS/CSV/summary_* 2>/dev/null | wc -l | tr -s " " | cut -d " " -f 1');
+				crtjobs=$(ssh $bklc_login@$bklc_host 'grep -v ^### /tmp/BK_RESULTS/CSV/summary_* 2>/dev/null | wc -l | tr -s " " | cut -d " " -f 1');
 				sleep $bk_delay
 			done) | lib/CocoaDialog.app/Contents/MacOS/CocoaDialog progressbar --stoppable --title "BenchKit ($BENCHKIT_VERSION) status for $(basename $bk_jobfile .bkjobs)" &
 		else
